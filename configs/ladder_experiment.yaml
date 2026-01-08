@@ -1,0 +1,61 @@
+# Ladder Experiment Configuration
+# Proves that "more preprocessing" is not strictly better.
+
+data:
+  path: "data/raw/retail.csv"
+  target: "Discount_Applied"
+  task_type: "classification"
+  sensitive_attribute: "Location"
+
+cache:
+  enabled: true
+  dir: "cache_store"
+  version: "v3_ladder_exp_pandas"
+
+splitting:
+  strategy: "time_rolling"
+  date_col: "Transaction_Date"
+  n_splits: 3
+  gap: 0
+  # min_train_size: optional
+
+models:
+  xgboost:
+    type: "xgboost"
+    args:
+      n_estimators: 50
+      max_depth: 3
+      n_jobs: 1 # Let joblib handle parallelization if we parallelize loop
+
+ladder:
+  # Rung 0 (Base) + Steps
+  - type: "impute"
+    numerical_args: {strategy: "median"}
+    categorical_args: {strategy: "most_frequent"}
+
+  - type: "encode"
+    encoder_type: "one_hot"
+    args: {handle_unknown: "ignore", sparse_output: false}
+
+  - type: "scale"
+    scaler_type: "standard_scaler"
+
+  - type: "clip"
+    args: {lower_percentile: 0.01, upper_percentile: 0.99}
+
+strategies:
+  baseline:
+    preprocessing:
+      numerical:
+        features: ["Price_Per_Unit", "Quantity", "Total_Spent"]
+      categorical:
+        features: ["Category", "Payment_Method", "Location"]
+
+pareto:
+  objectives:
+    f1_mean: "max"
+    demographic_parity_diff_mean: "min"
+    timings_total_time_mean: "min"
+
+constraints:
+  - "demographic_parity_diff_mean < 0.2"
