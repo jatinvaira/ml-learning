@@ -5,3 +5,5 @@ mlflow
 pyarrow
 matplotlib
 numpy
+pytest
+pyyaml
