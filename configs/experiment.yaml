@@ -1,0 +1,45 @@
+data:
+  path: "data/raw/retail.csv"
+  target: "Discount_Applied"
+  sensitive_attribute: "Location"
+  task_type: "classification"
+
+splitting:
+  strategy: "time"
+  date_col: "Transaction_Date"
+  test_size: 0.2
+
+strategies:
+  basic:
+    preprocessing:
+      numerical:
+        features: ["Price_Per_Unit", "Quantity", "Total_Spent"]
+        steps:
+          - name: "imputer"
+            type: "simple_imputer"
+            args:
+              strategy: "median"
+          - name: "scaler"
+            type: "standard_scaler"
+      categorical:
+        features: ["Category", "Payment_Method", "Location"]
+        steps:
+          - name: "imputer"
+            type: "simple_imputer"
+            args:
+              strategy: "most_frequent"
+          - name: "encoder"
+            type: "one_hot"
+            args:
+              handle_unknown: "ignore"
+
+models:
+  lr:
+    type: "logistic_regression"
+    args:
+      max_iter: 1000
+  rf:
+    type: "random_forest_clf"
+    args:
+      n_estimators: 50
+      random_state: 42
